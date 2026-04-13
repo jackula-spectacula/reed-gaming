@@ -297,6 +297,8 @@
 <style>
   .maze-tc { width: 48px; height: 48px; border-radius: 10px; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25); color: #a78bfa; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   .maze-tc:active { background: rgba(167,139,250,0.3); }
+  @media (pointer: coarse) { .maze-touch-controls { display: none !important; } }
+  #maze-canvas { touch-action: none; }
   .maze-level-btn {
     padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
     background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.15);
@@ -505,6 +507,66 @@ window.mazeSetLevel = function(level) {
 window.mazeRestart = function() {
   mazeGenAndDraw();
 };
+
+// ─── Touch drag to move through maze ───
+(function() {
+  let dragging = false;
+  let lastCellX = -1, lastCellY = -1;
+  const canvas = document.getElementById('maze-canvas');
+
+  function getCellFromTouch(e) {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    const x = Math.floor((t.clientX - rect.left) / (rect.width / mazeW));
+    const y = Math.floor((t.clientY - rect.top) / (rect.height / mazeH));
+    return { x, y };
+  }
+
+  function tryMoveToward(tx, ty) {
+    if (mazeWon) return;
+    // Only move one step at a time in the direction of the target cell
+    const dx = Math.sign(tx - mazePx);
+    const dy = Math.sign(ty - mazePy);
+    // Prefer the axis with greater distance
+    const adx = Math.abs(tx - mazePx), ady = Math.abs(ty - mazePy);
+    const moves = adx >= ady ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
+    for (const [mx, my] of moves) {
+      if (mx === 0 && my === 0) continue;
+      const nx = mazePx + mx, ny = mazePy + my;
+      if (nx >= 0 && nx < mazeW && ny >= 0 && ny < mazeH && mazeGrid[ny][nx] === 0) {
+        mazePx = nx; mazePy = ny; mazeDraw();
+        if (mazePx === mazeW - 1 && mazePy === mazeH - 2) {
+          mazeWon = true;
+          document.getElementById('maze-win').classList.remove('hidden');
+          document.getElementById('maze-play-again').classList.remove('hidden');
+        }
+        return;
+      }
+    }
+  }
+
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    dragging = true;
+    const cell = getCellFromTouch(e);
+    lastCellX = cell.x; lastCellY = cell.y;
+    tryMoveToward(cell.x, cell.y);
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (!dragging) return;
+    const cell = getCellFromTouch(e);
+    // Only process when finger moves to a new cell
+    if (cell.x !== lastCellX || cell.y !== lastCellY) {
+      lastCellX = cell.x; lastCellY = cell.y;
+      tryMoveToward(cell.x, cell.y);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', function() { dragging = false; });
+  canvas.addEventListener('touchcancel', function() { dragging = false; });
+})();
 </script>
 
 <!-- ===================== MEMORY MATCH SCRIPT ===================== -->
@@ -575,7 +637,7 @@ function memFlip(i) {
     const [a, b] = memFlipped;
     if (memCards[a] === memCards[b]) {
       memMatched.push(a, b); cells[a].classList.add('matched'); cells[b].classList.add('matched');
-      memFlipped = []; memLock = false;
+      memFlipped = []; memLock = false; memUpdateStats();
       if (memMatched.length === memPairCount * 2) {
         document.getElementById('mem-msg').textContent = 'Nice! Done in ' + memMoves + ' moves.';
         document.getElementById('mem-restart').classList.remove('hidden');

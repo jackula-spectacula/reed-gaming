@@ -297,11 +297,28 @@
 <style>
   .maze-tc { width: 48px; height: 48px; border-radius: 10px; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25); color: #a78bfa; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
   @media (pointer: fine) { .maze-touch-controls { display: none !important; } }
+  .maze-level-btn {
+    padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.15);
+    color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;
+  }
+  .maze-level-btn.active {
+    background: rgba(167,139,250,0.25); border-color: rgba(167,139,250,0.5); color: #fff;
+  }
 </style>
 <div class="flex-1 flex flex-col items-center justify-center p-4 gap-4" style="min-height:calc(100vh - 57px)">
+  <div class="flex items-center gap-2">
+    <span class="text-gray-500 text-sm mr-1">Level:</span>
+    <button class="maze-level-btn active" onclick="mazeSetLevel(1)">1</button>
+    <button class="maze-level-btn" onclick="mazeSetLevel(2)">2</button>
+    <button class="maze-level-btn" onclick="mazeSetLevel(3)">3</button>
+    <button class="maze-level-btn" onclick="mazeSetLevel(4)">4</button>
+    <button class="maze-level-btn" onclick="mazeSetLevel(5)">5</button>
+  </div>
   <canvas id="maze-canvas"></canvas>
   <p id="maze-info" class="text-gray-500 text-sm">Arrow keys to move. Reach the door.</p>
   <p id="maze-win" class="text-green-400 font-bold text-lg hidden">You escaped!</p>
+  <button id="maze-play-again" class="hidden px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm font-semibold transition-colors cursor-pointer" onclick="mazeRestart()">Play Again</button>
   <div class="maze-touch-controls grid grid-cols-3 grid-rows-2 gap-1 mt-2">
     <div></div><div class="maze-tc" ontouchstart="mazeMove(0,-1)">&#8593;</div><div></div>
     <div class="maze-tc" ontouchstart="mazeMove(-1,0)">&#8592;</div>
@@ -326,8 +343,24 @@
   }
   .mem-cell.flipped, .mem-cell.matched { background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.3); }
   .mem-cell.matched { opacity: 0.5; }
+  .mem-size-btn {
+    padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    background: rgba(244,114,182,0.08); border: 1px solid rgba(244,114,182,0.15);
+    color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;
+  }
+  .mem-size-btn.active {
+    background: rgba(244,114,182,0.25); border-color: rgba(244,114,182,0.5); color: #fff;
+  }
 </style>
 <div class="flex-1 flex flex-col items-center justify-center p-4 gap-4" style="min-height:calc(100vh - 57px)">
+  <div class="flex items-center gap-2">
+    <span class="text-gray-500 text-sm mr-1">Grid:</span>
+    <button class="mem-size-btn active" onclick="memSetSize(4)">4x4</button>
+    <button class="mem-size-btn" onclick="memSetSize(5)">5x5</button>
+    <button class="mem-size-btn" onclick="memSetSize(6)">6x6</button>
+    <button class="mem-size-btn" onclick="memSetSize(7)">7x7</button>
+    <button class="mem-size-btn" onclick="memSetSize(8)">8x8</button>
+  </div>
   <p id="mem-stats" class="text-gray-400 text-sm">Moves: 0 · Pairs: 0 / 8</p>
   <div id="mem-grid" class="grid grid-cols-4 gap-2 w-full max-w-xs"></div>
   <p id="mem-msg" class="text-pink-400 font-bold text-lg min-h-[28px]"></p>
@@ -365,63 +398,21 @@ function navigate(page) {
 
 <!-- ===================== MAZE GAME SCRIPT ===================== -->
 <script>
-const MAZE_W = 15, MAZE_H = 15, MAZE_S = 24;
-let mazeGrid, mazePx, mazePy;
+let mazeGrid, mazePx, mazePy, mazeW, mazeH, mazeS, mazeLevel = 1;
+let mazeCanvas, mazeCtx, mazeWon = false;
+
+// Level configs: [gridWidth, gridHeight, cellSize]
+const mazeLevels = [
+  [15, 15, 24],  // Level 1
+  [21, 21, 18],  // Level 2
+  [31, 31, 14],  // Level 3
+  [41, 41, 10],  // Level 4
+  [51, 51, 8],   // Level 5
+];
 
 function initMaze() {
-  const canvas = document.getElementById('maze-canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = MAZE_W * MAZE_S;
-  canvas.height = MAZE_H * MAZE_S;
-
-  function generate() {
-    mazeGrid = Array.from({ length: MAZE_H }, () => Array(MAZE_W).fill(1));
-    function carve(x, y) {
-      mazeGrid[y][x] = 0;
-      const dirs = [[0,-2],[0,2],[-2,0],[2,0]].sort(() => Math.random() - 0.5);
-      for (const [dx, dy] of dirs) {
-        const nx = x + dx, ny = y + dy;
-        if (nx > 0 && nx < MAZE_W - 1 && ny > 0 && ny < MAZE_H - 1 && mazeGrid[ny][nx] === 1) {
-          mazeGrid[y + dy / 2][x + dx / 2] = 0;
-          carve(nx, ny);
-        }
-      }
-    }
-    carve(1, 1);
-    mazeGrid[MAZE_H - 2][MAZE_W - 2] = 0;
-    mazeGrid[MAZE_H - 2][MAZE_W - 1] = 0;
-    mazePx = 1; mazePy = 1;
-    document.getElementById('maze-win').classList.add('hidden');
-  }
-
-  function draw() {
-    ctx.fillStyle = '#0a0f1a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (let y = 0; y < MAZE_H; y++) for (let x = 0; x < MAZE_W; x++) {
-      if (mazeGrid[y][x] === 1) {
-        ctx.fillStyle = '#1e293b'; ctx.fillRect(x * MAZE_S, y * MAZE_S, MAZE_S, MAZE_S);
-        ctx.strokeStyle = '#334155'; ctx.strokeRect(x * MAZE_S, y * MAZE_S, MAZE_S, MAZE_S);
-      }
-    }
-    ctx.fillStyle = 'rgba(167,139,250,0.3)';
-    ctx.fillRect((MAZE_W - 1) * MAZE_S, (MAZE_H - 2) * MAZE_S, MAZE_S, MAZE_S);
-    ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('\u{1F6AA}', (MAZE_W - 1) * MAZE_S + MAZE_S / 2, (MAZE_H - 2) * MAZE_S + MAZE_S / 2 + 5);
-    ctx.fillStyle = '#a78bfa'; ctx.shadowColor = '#a78bfa'; ctx.shadowBlur = 12;
-    ctx.beginPath(); ctx.arc(mazePx * MAZE_S + MAZE_S / 2, mazePy * MAZE_S + MAZE_S / 2, MAZE_S / 3, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-  }
-
-  window.mazeMove = function(dx, dy) {
-    if (currentPage !== 'maze-runner') return;
-    const nx = mazePx + dx, ny = mazePy + dy;
-    if (nx >= 0 && nx < MAZE_W && ny >= 0 && ny < MAZE_H && mazeGrid[ny][nx] === 0) {
-      mazePx = nx; mazePy = ny; draw();
-    }
-    if (mazePx === MAZE_W - 1 && mazePy === MAZE_H - 2) {
-      document.getElementById('maze-win').classList.remove('hidden');
-    }
-  };
+  mazeCanvas = document.getElementById('maze-canvas');
+  mazeCtx = mazeCanvas.getContext('2d');
 
   document.addEventListener('keydown', e => {
     if (currentPage !== 'maze-runner') return;
@@ -432,40 +423,167 @@ function initMaze() {
     e.preventDefault();
   });
 
-  generate(); draw();
+  mazeGenAndDraw();
 }
+
+function mazeGenAndDraw() {
+  const cfg = mazeLevels[mazeLevel - 1];
+  mazeW = cfg[0]; mazeH = cfg[1]; mazeS = cfg[2];
+  mazeCanvas.width = mazeW * mazeS;
+  mazeCanvas.height = mazeH * mazeS;
+  mazeWon = false;
+
+  mazeGrid = Array.from({ length: mazeH }, () => Array(mazeW).fill(1));
+  // Iterative carve to avoid stack overflow on large mazes
+  const stack = [[1, 1]];
+  mazeGrid[1][1] = 0;
+  while (stack.length > 0) {
+    const [cx, cy] = stack[stack.length - 1];
+    const dirs = [[0,-2],[0,2],[-2,0],[2,0]].sort(() => Math.random() - 0.5);
+    let carved = false;
+    for (const [dx, dy] of dirs) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx > 0 && nx < mazeW - 1 && ny > 0 && ny < mazeH - 1 && mazeGrid[ny][nx] === 1) {
+        mazeGrid[cy + dy / 2][cx + dx / 2] = 0;
+        mazeGrid[ny][nx] = 0;
+        stack.push([nx, ny]);
+        carved = true;
+        break;
+      }
+    }
+    if (!carved) stack.pop();
+  }
+  mazeGrid[mazeH - 2][mazeW - 2] = 0;
+  mazeGrid[mazeH - 2][mazeW - 1] = 0;
+  mazePx = 1; mazePy = 1;
+  document.getElementById('maze-win').classList.add('hidden');
+  document.getElementById('maze-play-again').classList.add('hidden');
+  mazeDraw();
+}
+
+function mazeDraw() {
+  const ctx = mazeCtx;
+  ctx.fillStyle = '#0a0f1a';
+  ctx.fillRect(0, 0, mazeCanvas.width, mazeCanvas.height);
+  for (let y = 0; y < mazeH; y++) for (let x = 0; x < mazeW; x++) {
+    if (mazeGrid[y][x] === 1) {
+      ctx.fillStyle = '#1e293b'; ctx.fillRect(x * mazeS, y * mazeS, mazeS, mazeS);
+      ctx.strokeStyle = '#334155'; ctx.strokeRect(x * mazeS, y * mazeS, mazeS, mazeS);
+    }
+  }
+  ctx.fillStyle = 'rgba(167,139,250,0.3)';
+  ctx.fillRect((mazeW - 1) * mazeS, (mazeH - 2) * mazeS, mazeS, mazeS);
+  const emojiSize = Math.max(10, mazeS - 2);
+  ctx.font = emojiSize + 'px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('\u{1F6AA}', (mazeW - 1) * mazeS + mazeS / 2, (mazeH - 2) * mazeS + mazeS / 2 + emojiSize * 0.15);
+  ctx.fillStyle = '#a78bfa'; ctx.shadowColor = '#a78bfa'; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(mazePx * mazeS + mazeS / 2, mazePy * mazeS + mazeS / 2, mazeS / 3, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+window.mazeMove = function(dx, dy) {
+  if (currentPage !== 'maze-runner' || mazeWon) return;
+  const nx = mazePx + dx, ny = mazePy + dy;
+  if (nx >= 0 && nx < mazeW && ny >= 0 && ny < mazeH && mazeGrid[ny][nx] === 0) {
+    mazePx = nx; mazePy = ny; mazeDraw();
+  }
+  if (mazePx === mazeW - 1 && mazePy === mazeH - 2) {
+    mazeWon = true;
+    document.getElementById('maze-win').classList.remove('hidden');
+    document.getElementById('maze-play-again').classList.remove('hidden');
+  }
+};
+
+window.mazeSetLevel = function(level) {
+  mazeLevel = level;
+  document.querySelectorAll('.maze-level-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === level - 1);
+  });
+  mazeGenAndDraw();
+};
+
+window.mazeRestart = function() {
+  mazeGenAndDraw();
+};
 </script>
 
 <!-- ===================== MEMORY MATCH SCRIPT ===================== -->
 <script>
-const memEmojis = ['\u{1F3AE}','\u{1F579}','\u{1F47E}','\u{1F3B2}','\u{1F3C6}','\u26A1','\u{1F525}','\u{1F48E}'];
-let memCards, memFlipped, memMatched, memMoves, memLock;
+const memAllEmojis = [
+  '\u{1F3AE}','\u{1F579}','\u{1F47E}','\u{1F3B2}','\u{1F3C6}','\u26A1','\u{1F525}','\u{1F48E}',
+  '\u{1F680}','\u{1F308}','\u{1F33B}','\u{1F40B}','\u{1F984}','\u{1F369}','\u{1F3B5}','\u{1F48E}',
+  '\u{1F9E9}','\u{1F30D}','\u{1F34E}','\u{2B50}','\u{1F431}','\u{1F436}','\u{1F98B}','\u{1F54A}',
+  '\u{1F40D}','\u{1F419}','\u{1F996}','\u{1F9CA}','\u{1F38A}','\u{1F451}','\u{1F48E}','\u{1F52E}'
+];
+let memCards, memFlipped, memMatched, memMoves, memLock, memGridSize = 4, memPairCount;
+
+// Grid size configs: [cols, totalPairs] — odd grids get one blank cell
+const memSizeConfigs = {
+  4: { cols: 4, pairs: 8 },      // 16 cells = 8 pairs
+  5: { cols: 5, pairs: 12 },     // 25 cells = 12 pairs + 1 blank
+  6: { cols: 6, pairs: 18 },     // 36 cells = 18 pairs
+  7: { cols: 7, pairs: 24 },     // 49 cells = 24 pairs + 1 blank
+  8: { cols: 8, pairs: 32 },     // 64 cells = 32 pairs
+};
 
 function memInit() {
-  memCards = [...memEmojis, ...memEmojis].sort(() => Math.random() - 0.5);
+  const cfg = memSizeConfigs[memGridSize];
+  memPairCount = cfg.pairs;
+  const totalCells = memGridSize * memGridSize;
+  const hasBlank = totalCells % 2 === 1;
+
+  // Pick random emojis for the pairs needed
+  const shuffledEmojis = [...memAllEmojis].sort(() => Math.random() - 0.5).slice(0, memPairCount);
+  memCards = [...shuffledEmojis, ...shuffledEmojis].sort(() => Math.random() - 0.5);
+
+  // For odd grids, insert a blank in a random spot
+  if (hasBlank) {
+    const blankPos = Math.floor(Math.random() * (memCards.length + 1));
+    memCards.splice(blankPos, 0, null);
+  }
+
   memFlipped = []; memMatched = []; memMoves = 0; memLock = false;
   document.getElementById('mem-msg').textContent = '';
   document.getElementById('mem-restart').classList.add('hidden');
-  memRender(); memUpdateStats();
+
+  // Update grid CSS
+  const grid = document.getElementById('mem-grid');
+  grid.style.gridTemplateColumns = 'repeat(' + memGridSize + ', 1fr)';
+  // Scale max-width based on grid size
+  const maxWidths = { 4: '20rem', 5: '24rem', 6: '28rem', 7: '32rem', 8: '36rem' };
+  grid.style.maxWidth = maxWidths[memGridSize];
+  // Scale font size for smaller cells
+  const fontSizes = { 4: '28px', 5: '24px', 6: '20px', 7: '18px', 8: '16px' };
+  grid.dataset.fontSize = fontSizes[memGridSize];
+
+  memRender();
+  memUpdateStats();
 }
 
 function memRender() {
   const grid = document.getElementById('mem-grid');
   grid.innerHTML = '';
-  memCards.forEach((_, i) => {
+  memCards.forEach((card, i) => {
     const d = document.createElement('div');
-    d.className = 'mem-cell';
-    d.onclick = () => memFlip(i);
+    if (card === null) {
+      // Blank cell for odd grids — invisible
+      d.className = 'mem-cell';
+      d.style.visibility = 'hidden';
+    } else {
+      d.className = 'mem-cell';
+      d.style.fontSize = grid.dataset.fontSize;
+      d.onclick = () => memFlip(i);
+    }
     grid.appendChild(d);
   });
 }
 
 function memUpdateStats() {
-  document.getElementById('mem-stats').textContent = 'Moves: ' + memMoves + ' \u00B7 Pairs: ' + (memMatched.length / 2) + ' / 8';
+  document.getElementById('mem-stats').textContent = 'Moves: ' + memMoves + ' \u00B7 Pairs: ' + (memMatched.length / 2) + ' / ' + memPairCount;
 }
 
 function memFlip(i) {
-  if (memLock || memFlipped.includes(i) || memMatched.includes(i)) return;
+  if (memLock || memFlipped.includes(i) || memMatched.includes(i) || memCards[i] === null) return;
   const cells = document.querySelectorAll('.mem-cell');
   cells[i].textContent = memCards[i]; cells[i].classList.add('flipped');
   memFlipped.push(i);
@@ -475,7 +593,7 @@ function memFlip(i) {
     if (memCards[a] === memCards[b]) {
       memMatched.push(a, b); cells[a].classList.add('matched'); cells[b].classList.add('matched');
       memFlipped = []; memLock = false;
-      if (memMatched.length === memCards.length) {
+      if (memMatched.length === memPairCount * 2) {
         document.getElementById('mem-msg').textContent = 'Nice! Done in ' + memMoves + ' moves.';
         document.getElementById('mem-restart').classList.remove('hidden');
       }
@@ -488,6 +606,14 @@ function memFlip(i) {
     }
   }
 }
+
+window.memSetSize = function(size) {
+  memGridSize = size;
+  document.querySelectorAll('.mem-size-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', [4,5,6,7,8][i] === size);
+  });
+  memInit();
+};
 
 memInit();
 </script>

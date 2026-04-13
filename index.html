@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site is Live</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      max-width: 480px;
+    }
+    .status { font-size: 3rem; margin-bottom: 0.5rem; }
+    h1 { margin: 0 0 0.5rem; font-size: 1.5rem; color: #38bdf8; }
+    p { margin: 0.25rem 0; color: #94a3b8; font-size: 0.9rem; }
+    .domain { font-weight: bold; color: #e2e8f0; }
+    .time { margin-top: 1rem; font-size: 0.8rem; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="status">✅</div>
+    <h1>Your site is live!</h1>
+    <p>Domain: <span class="domain" id="domain"></span></p>
+    <p>DNS is resolving correctly.</p>
+    <p>SSL is working.</p>
+    <p class="time" id="time"></p>
+  </div>
+
+  <script>
+    document.getElementById('domain').textContent = window.location.hostname;
+    document.getElementById('time').textContent = 'Loaded at ' + new Date().toLocaleString();
+  </script>
+</body>
+</html>

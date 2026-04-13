@@ -1,49 +1,1190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Site is Live</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
-    .card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 2rem 3rem;
-      text-align: center;
-      max-width: 480px;
-    }
-    .status { font-size: 3rem; margin-bottom: 0.5rem; }
-    h1 { margin: 0 0 0.5rem; font-size: 1.5rem; color: #38bdf8; }
-    p { margin: 0.25rem 0; color: #94a3b8; font-size: 0.9rem; }
-    .domain { font-weight: bold; color: #e2e8f0; }
-    .time { margin-top: 1rem; font-size: 0.8rem; color: #64748b; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Reed Gaming</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+  .card-img { aspect-ratio: 16 / 10; object-fit: cover; transition: transform 0.3s ease; }
+  .game-card:hover .card-img { transform: scale(1.05); }
+  .game-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .game-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .page { display: none; }
+  .page.active { display: block; }
+</style>
 </head>
-<body>
-  <div class="card">
-    <div class="status">✅</div>
-    <h1>Your site is live!</h1>
-    <p>Domain: <span class="domain" id="domain"></span></p>
-    <p>DNS is resolving correctly.</p>
-    <p>SSL is working.</p>
-    <p class="time" id="time"></p>
-  </div>
+<body class="bg-[#0a0f1a] text-white min-h-screen">
 
-  <script>
-    document.getElementById('domain').textContent = window.location.hostname;
-    document.getElementById('time').textContent = 'Loaded at ' + new Date().toLocaleString();
-  </script>
+<!-- ===================== LANDING PAGE ===================== -->
+<div id="page-home" class="page active">
+  <header class="text-center pt-16 pb-12 px-4">
+    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-3">Reed Gaming</h1>
+    <p class="text-gray-400 text-lg">Pick a game. Have fun.</p>
+  </header>
+  <main class="max-w-4xl mx-auto px-4 pb-20">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div onclick="navigate('emoji-pong')" class="game-card cursor-pointer rounded-2xl bg-[#111827] border border-[#1f2937] overflow-hidden">
+        <div class="overflow-hidden">
+          <div class="card-img w-full bg-[#111827] flex items-center justify-center text-6xl">🏓</div>
+        </div>
+        <div class="p-5"><h2 class="text-lg font-bold">Emoji Pong</h2></div>
+      </div>
+      <div onclick="navigate('maze-runner')" class="game-card cursor-pointer rounded-2xl bg-[#111827] border border-[#1f2937] overflow-hidden">
+        <div class="overflow-hidden">
+          <div class="card-img w-full bg-[#111827] flex items-center justify-center text-6xl">🏃</div>
+        </div>
+        <div class="p-5"><h2 class="text-lg font-bold">Maze Runner</h2></div>
+      </div>
+      <div onclick="navigate('memory-match')" class="game-card cursor-pointer rounded-2xl bg-[#111827] border border-[#1f2937] overflow-hidden">
+        <div class="overflow-hidden">
+          <div class="card-img w-full bg-[#111827] flex items-center justify-center text-6xl">🃏</div>
+        </div>
+        <div class="p-5"><h2 class="text-lg font-bold">Memory Match</h2></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== EMOJI PONG PAGE ===================== -->
+<div id="page-emoji-pong" class="page">
+<div class="flex items-center gap-4 px-6 py-4 border-b border-[#1f2937]">
+  <button onclick="navigate('home')" class="text-gray-400 hover:text-white text-sm cursor-pointer">&larr; Back</button>
+  <h1 class="text-lg font-bold">Emoji Pong</h1>
+</div>
+<style>
+  #pong-body { background: var(--bg-color, #0a0f1a); }
+  #pong-game-container {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: calc(100vh - 57px); width: 100%; position: relative;
+  }
+  canvas#pong-game { display: block; border-radius: 8px; }
+  #pong-score-display {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; gap: 16px;
+    color: rgba(255,255,255,0.25); font-size: 64px; font-weight: 900;
+    pointer-events: none; z-index: 1;
+  }
+  #pong-score-display .score-dash { font-size: 40px; color: rgba(255,255,255,0.15); }
+  .pong-bottom-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(20,20,40,0.95); backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: none; flex-direction: column; z-index: 10;
+  }
+  .pong-bottom-panel.open { display: flex; }
+  #pong-customize-panel { padding: 8px 4px 12px; max-height: 70vh; }
+  #pong-customize-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 4px; }
+  .pong-panel-section { padding: 8px 12px; }
+  .pong-panel-section-title {
+    color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
+  }
+  .pong-panel-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 12px; }
+  .pong-panel-footer { padding: 8px 12px 4px; display: flex; justify-content: center; }
+  #pong-emoji-categories {
+    display: flex; gap: 2px; padding: 0 0 6px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  #pong-emoji-categories::-webkit-scrollbar { display: none; }
+  .pong-cat-btn {
+    flex-shrink: 0; background: rgba(255,255,255,0.08); border: none; border-radius: 6px;
+    color: #fff; font-size: 20px; padding: 4px 10px; cursor: pointer;
+  }
+  .pong-cat-btn.active { background: rgba(100,140,255,0.3); }
+  #pong-emoji-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 2px; max-height: 160px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .pong-emoji-btn {
+    background: none; border: none; font-size: 28px; padding: 6px;
+    cursor: pointer; border-radius: 6px; line-height: 1;
+  }
+  .pong-emoji-btn:active { background: rgba(255,255,255,0.15); }
+  .pong-btn {
+    background: rgba(100,140,255,0.2); border: 1px solid rgba(100,140,255,0.4);
+    color: #fff; font-size: 16px; padding: 10px 24px; border-radius: 10px;
+    cursor: pointer; font-weight: 600;
+  }
+  .pong-btn:active { background: rgba(100,140,255,0.4); }
+  .pong-top-btn {
+    position: absolute; top: 12px; z-index: 5;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: #fff; font-size: 22px; width: 44px; height: 44px; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  #pong-customize-btn { right: 12px; }
+  #pong-settings-btn { right: 64px; }
+  #pong-mute-btn { right: 116px; }
+  #pong-settings-panel { padding: 16px 20px 28px; gap: 18px; }
+  .pong-setting-row { display: flex; flex-direction: column; gap: 6px; }
+  .pong-setting-label {
+    display: flex; justify-content: space-between; align-items: center;
+    color: rgba(255,255,255,0.8); font-size: 14px; font-weight: 600;
+  }
+  .pong-setting-value { color: rgba(100,180,255,0.9); font-size: 14px; font-weight: 700; }
+  .pong-settings-title {
+    color: #fff; font-size: 16px; font-weight: 700; text-align: center;
+    padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  #page-emoji-pong input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+    background: rgba(255,255,255,0.12); border-radius: 3px; outline: none;
+  }
+  #page-emoji-pong input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px;
+    background: rgba(100,180,255,0.9); border-radius: 50%; cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .pong-size-labels { display: flex; justify-content: space-between; padding: 0 2px; }
+  .pong-size-labels span { color: rgba(255,255,255,0.35); font-size: 11px; }
+  .pong-song-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pong-song-btn {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7); font-size: 12px; padding: 6px 12px;
+    border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;
+  }
+  .pong-song-btn.active {
+    background: rgba(100,140,255,0.25); border-color: rgba(100,140,255,0.5); color: #fff;
+  }
+  .pong-color-wheel-container { display: flex; align-items: center; gap: 12px; justify-content: center; }
+  .pong-color-wheel-wrap { position: relative; flex-shrink: 0; }
+  .pong-color-wheel-canvas { border-radius: 50%; cursor: crosshair; display: block; }
+  .pong-color-wheel-cursor {
+    position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid #fff; box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    pointer-events: none; transform: translate(-50%, -50%);
+  }
+  .pong-brightness-canvas { border-radius: 4px; cursor: pointer; display: block; }
+  .pong-brightness-cursor {
+    position: absolute; width: 22px; height: 6px; border-radius: 3px;
+    border: 2px solid #fff; box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    pointer-events: none; transform: translate(-50%, -50%);
+  }
+  .pong-brightness-wrap-inner { position: relative; }
+  .pong-color-swatch {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.25); flex-shrink: 0;
+  }
+  #pong-pause-overlay {
+    position: absolute; inset: 0; display: none;
+    flex-direction: column; gap: 16px;
+    align-items: center; justify-content: center; z-index: 8;
+    background: rgba(10,10,26,0.6); backdrop-filter: blur(3px); pointer-events: none;
+  }
+  #pong-pause-overlay.visible { display: flex; }
+  #pong-pause-overlay span {
+    color: rgba(255,255,255,0.5); font-size: 28px; font-weight: 700;
+    letter-spacing: 4px; text-transform: uppercase;
+  }
+  #pong-resume-btn { pointer-events: auto; }
+  .pong-overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 20;
+    background: rgba(10,10,26,0.85); backdrop-filter: blur(6px); gap: 16px;
+  }
+  .pong-overlay h1 { color: #fff; font-size: 32px; }
+  .pong-overlay p { color: rgba(255,255,255,0.6); font-size: 16px; text-align: center; padding: 0 30px; }
+  .pong-overlay .ball-preview { font-size: 64px; }
+  .pong-overlay .pong-setting-row { width: 80%; max-width: 300px; }
+  .pong-hidden { display: none !important; }
+  #pong-center-line {
+    position: absolute; left: 50%; width: 2px; top: 0; bottom: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0 8px, rgba(255,255,255,0.08) 8px 16px);
+    pointer-events: none; z-index: 0;
+  }
+</style>
+<div id="pong-body" style="touch-action:none;">
+<div id="pong-game-container">
+  <div id="pong-center-line"></div>
+  <div id="pong-score-display"><span id="pong-player-score">0</span><span class="score-dash">–</span><span id="pong-ai-score">0</span></div>
+  <canvas id="pong-game"></canvas>
+  <button class="pong-top-btn" id="pong-mute-btn">🔊</button>
+  <button class="pong-top-btn" id="pong-customize-btn">🎨</button>
+  <button class="pong-top-btn" id="pong-settings-btn">⚙️</button>
+  <div id="pong-pause-overlay"><span>Paused</span><button class="pong-btn" id="pong-resume-btn">Resume</button></div>
+  <div class="pong-overlay" id="pong-start-screen">
+    <div class="ball-preview" id="pong-start-ball-preview">🏓</div>
+    <h1>Emoji Pong</h1>
+    <p id="pong-instructions-text">Move your mouse or use arrow keys to control your paddle.</p>
+    <div class="pong-setting-row">
+      <div class="pong-setting-label">Ball Speed <span class="pong-setting-value" id="pong-start-speed-value">Normal</span></div>
+      <input type="range" id="pong-start-speed-slider" min="1" max="5" step="1" value="3">
+    </div>
+    <div class="pong-setting-row">
+      <div class="pong-setting-label">AI Difficulty <span class="pong-setting-value" id="pong-start-diff-value">Normal</span></div>
+      <input type="range" id="pong-start-diff-slider" min="1" max="5" step="1" value="3">
+    </div>
+    <div class="pong-setting-row pong-keyboard-only">
+      <div class="pong-setting-label">Arrow Key Sensitivity <span class="pong-setting-value" id="pong-start-sens-value">Normal</span></div>
+      <input type="range" id="pong-start-sens-slider" min="1" max="5" step="1" value="3">
+    </div>
+    <button class="pong-btn" id="pong-start-btn">Play</button>
+  </div>
+  <div class="pong-overlay pong-hidden" id="pong-gameover-screen">
+    <div class="ball-preview" id="pong-go-ball-preview">🏓</div>
+    <h1 id="pong-go-title">Game Over</h1>
+    <p id="pong-go-subtitle"></p>
+    <button class="pong-btn" id="pong-restart-btn">Play Again</button>
+  </div>
+  <div class="pong-bottom-panel" id="pong-customize-panel">
+    <div id="pong-customize-scroll">
+      <div class="pong-panel-section">
+        <div class="pong-panel-section-title">Ball Emoji</div>
+        <div id="pong-emoji-categories"></div>
+        <div id="pong-emoji-grid"></div>
+      </div>
+      <div class="pong-panel-divider"></div>
+      <div class="pong-panel-section">
+        <div class="pong-panel-section-title">Paddle Size</div>
+        <div class="pong-setting-row">
+          <input type="range" id="pong-paddle-size-slider" min="1" max="5" step="1" value="3">
+          <div class="pong-size-labels"><span>Tiny</span><span>Small</span><span>Normal</span><span>Large</span><span>Huge</span></div>
+        </div>
+      </div>
+      <div class="pong-panel-divider"></div>
+      <div class="pong-panel-section">
+        <div class="pong-panel-section-title">Player Paddle Color</div>
+        <div class="pong-color-wheel-container" id="pong-player-color-container"></div>
+      </div>
+      <div class="pong-panel-divider"></div>
+      <div class="pong-panel-section">
+        <div class="pong-panel-section-title">AI Paddle Color</div>
+        <div class="pong-color-wheel-container" id="pong-ai-color-container"></div>
+      </div>
+      <div class="pong-panel-divider"></div>
+      <div class="pong-panel-section">
+        <div class="pong-panel-section-title">Background Color</div>
+        <div class="pong-color-wheel-container" id="pong-bg-color-container"></div>
+      </div>
+      <div class="pong-panel-divider"></div>
+      <div class="pong-panel-section">
+        <div class="pong-panel-section-title">Music</div>
+        <div class="pong-song-grid" id="pong-song-grid"></div>
+      </div>
+    </div>
+    <div class="pong-panel-footer">
+      <button class="pong-btn" id="pong-palette-resume-btn">Resume</button>
+    </div>
+  </div>
+  <div class="pong-bottom-panel" id="pong-settings-panel">
+    <div class="pong-settings-title">Settings</div>
+    <div class="pong-setting-row">
+      <div class="pong-setting-label">Ball Speed <span class="pong-setting-value" id="pong-speed-value">Normal</span></div>
+      <input type="range" id="pong-speed-slider" min="1" max="5" step="1" value="3">
+    </div>
+    <div class="pong-setting-row">
+      <div class="pong-setting-label">AI Difficulty <span class="pong-setting-value" id="pong-diff-value">Normal</span></div>
+      <input type="range" id="pong-diff-slider" min="1" max="5" step="1" value="3">
+    </div>
+    <div class="pong-setting-row pong-keyboard-only">
+      <div class="pong-setting-label">Arrow Key Sensitivity <span class="pong-setting-value" id="pong-sens-value">Normal</span></div>
+      <input type="range" id="pong-sens-slider" min="1" max="5" step="1" value="3">
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ===================== MAZE RUNNER PAGE ===================== -->
+<div id="page-maze-runner" class="page">
+<div class="flex items-center gap-4 px-6 py-4 border-b border-[#1f2937]">
+  <button onclick="navigate('home')" class="text-gray-400 hover:text-white text-sm cursor-pointer">&larr; Back</button>
+  <h1 class="text-lg font-bold">Maze Runner</h1>
+</div>
+<style>
+  .maze-tc { width: 48px; height: 48px; border-radius: 10px; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25); color: #a78bfa; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
+  @media (pointer: fine) { .maze-touch-controls { display: none !important; } }
+</style>
+<div class="flex-1 flex flex-col items-center justify-center p-4 gap-4" style="min-height:calc(100vh - 57px)">
+  <canvas id="maze-canvas"></canvas>
+  <p id="maze-info" class="text-gray-500 text-sm">Arrow keys to move. Reach the door.</p>
+  <p id="maze-win" class="text-green-400 font-bold text-lg hidden">You escaped!</p>
+  <div class="maze-touch-controls grid grid-cols-3 grid-rows-2 gap-1 mt-2">
+    <div></div><div class="maze-tc" ontouchstart="mazeMove(0,-1)">&#8593;</div><div></div>
+    <div class="maze-tc" ontouchstart="mazeMove(-1,0)">&#8592;</div>
+    <div class="maze-tc" ontouchstart="mazeMove(0,1)">&#8595;</div>
+    <div class="maze-tc" ontouchstart="mazeMove(1,0)">&#8594;</div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== MEMORY MATCH PAGE ===================== -->
+<div id="page-memory-match" class="page">
+<div class="flex items-center gap-4 px-6 py-4 border-b border-[#1f2937]">
+  <button onclick="navigate('home')" class="text-gray-400 hover:text-white text-sm cursor-pointer">&larr; Back</button>
+  <h1 class="text-lg font-bold">Memory Match</h1>
+</div>
+<style>
+  .mem-cell {
+    aspect-ratio: 1; border-radius: 12px; background: #1e293b;
+    border: 2px solid #334155; display: flex; align-items: center;
+    justify-content: center; font-size: 28px; cursor: pointer;
+    transition: all 0.3s; user-select: none;
+  }
+  .mem-cell.flipped, .mem-cell.matched { background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.3); }
+  .mem-cell.matched { opacity: 0.5; }
+</style>
+<div class="flex-1 flex flex-col items-center justify-center p-4 gap-4" style="min-height:calc(100vh - 57px)">
+  <p id="mem-stats" class="text-gray-400 text-sm">Moves: 0 · Pairs: 0 / 8</p>
+  <div id="mem-grid" class="grid grid-cols-4 gap-2 w-full max-w-xs"></div>
+  <p id="mem-msg" class="text-pink-400 font-bold text-lg min-h-[28px]"></p>
+  <button id="mem-restart" class="hidden px-5 py-2 rounded-lg bg-pink-600 hover:bg-pink-500 text-sm font-semibold transition-colors cursor-pointer" onclick="memInit()">Play Again</button>
+</div>
+</div>
+
+<!-- ===================== ROUTER ===================== -->
+<script>
+let currentPage = 'home';
+let pongInitialized = false;
+let mazeInitialized = false;
+
+function navigate(page) {
+  // Clean up pong if leaving
+  if (currentPage === 'emoji-pong' && page !== 'emoji-pong') {
+    if (typeof pongCleanup === 'function') pongCleanup();
+  }
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  currentPage = page;
+  window.scrollTo(0, 0);
+
+  if (page === 'emoji-pong' && !pongInitialized) {
+    pongInitialized = true;
+    initPong();
+  }
+  if (page === 'maze-runner' && !mazeInitialized) {
+    mazeInitialized = true;
+    initMaze();
+  }
+}
+</script>
+
+<!-- ===================== MAZE GAME SCRIPT ===================== -->
+<script>
+const MAZE_W = 15, MAZE_H = 15, MAZE_S = 24;
+let mazeGrid, mazePx, mazePy;
+
+function initMaze() {
+  const canvas = document.getElementById('maze-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = MAZE_W * MAZE_S;
+  canvas.height = MAZE_H * MAZE_S;
+
+  function generate() {
+    mazeGrid = Array.from({ length: MAZE_H }, () => Array(MAZE_W).fill(1));
+    function carve(x, y) {
+      mazeGrid[y][x] = 0;
+      const dirs = [[0,-2],[0,2],[-2,0],[2,0]].sort(() => Math.random() - 0.5);
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx, ny = y + dy;
+        if (nx > 0 && nx < MAZE_W - 1 && ny > 0 && ny < MAZE_H - 1 && mazeGrid[ny][nx] === 1) {
+          mazeGrid[y + dy / 2][x + dx / 2] = 0;
+          carve(nx, ny);
+        }
+      }
+    }
+    carve(1, 1);
+    mazeGrid[MAZE_H - 2][MAZE_W - 2] = 0;
+    mazeGrid[MAZE_H - 2][MAZE_W - 1] = 0;
+    mazePx = 1; mazePy = 1;
+    document.getElementById('maze-win').classList.add('hidden');
+  }
+
+  function draw() {
+    ctx.fillStyle = '#0a0f1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let y = 0; y < MAZE_H; y++) for (let x = 0; x < MAZE_W; x++) {
+      if (mazeGrid[y][x] === 1) {
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(x * MAZE_S, y * MAZE_S, MAZE_S, MAZE_S);
+        ctx.strokeStyle = '#334155'; ctx.strokeRect(x * MAZE_S, y * MAZE_S, MAZE_S, MAZE_S);
+      }
+    }
+    ctx.fillStyle = 'rgba(167,139,250,0.3)';
+    ctx.fillRect((MAZE_W - 1) * MAZE_S, (MAZE_H - 2) * MAZE_S, MAZE_S, MAZE_S);
+    ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('\u{1F6AA}', (MAZE_W - 1) * MAZE_S + MAZE_S / 2, (MAZE_H - 2) * MAZE_S + MAZE_S / 2 + 5);
+    ctx.fillStyle = '#a78bfa'; ctx.shadowColor = '#a78bfa'; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(mazePx * MAZE_S + MAZE_S / 2, mazePy * MAZE_S + MAZE_S / 2, MAZE_S / 3, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  window.mazeMove = function(dx, dy) {
+    if (currentPage !== 'maze-runner') return;
+    const nx = mazePx + dx, ny = mazePy + dy;
+    if (nx >= 0 && nx < MAZE_W && ny >= 0 && ny < MAZE_H && mazeGrid[ny][nx] === 0) {
+      mazePx = nx; mazePy = ny; draw();
+    }
+    if (mazePx === MAZE_W - 1 && mazePy === MAZE_H - 2) {
+      document.getElementById('maze-win').classList.remove('hidden');
+    }
+  };
+
+  document.addEventListener('keydown', e => {
+    if (currentPage !== 'maze-runner') return;
+    if (e.key === 'ArrowUp') mazeMove(0, -1);
+    if (e.key === 'ArrowDown') mazeMove(0, 1);
+    if (e.key === 'ArrowLeft') mazeMove(-1, 0);
+    if (e.key === 'ArrowRight') mazeMove(1, 0);
+    e.preventDefault();
+  });
+
+  generate(); draw();
+}
+</script>
+
+<!-- ===================== MEMORY MATCH SCRIPT ===================== -->
+<script>
+const memEmojis = ['\u{1F3AE}','\u{1F579}','\u{1F47E}','\u{1F3B2}','\u{1F3C6}','\u26A1','\u{1F525}','\u{1F48E}'];
+let memCards, memFlipped, memMatched, memMoves, memLock;
+
+function memInit() {
+  memCards = [...memEmojis, ...memEmojis].sort(() => Math.random() - 0.5);
+  memFlipped = []; memMatched = []; memMoves = 0; memLock = false;
+  document.getElementById('mem-msg').textContent = '';
+  document.getElementById('mem-restart').classList.add('hidden');
+  memRender(); memUpdateStats();
+}
+
+function memRender() {
+  const grid = document.getElementById('mem-grid');
+  grid.innerHTML = '';
+  memCards.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'mem-cell';
+    d.onclick = () => memFlip(i);
+    grid.appendChild(d);
+  });
+}
+
+function memUpdateStats() {
+  document.getElementById('mem-stats').textContent = 'Moves: ' + memMoves + ' \u00B7 Pairs: ' + (memMatched.length / 2) + ' / 8';
+}
+
+function memFlip(i) {
+  if (memLock || memFlipped.includes(i) || memMatched.includes(i)) return;
+  const cells = document.querySelectorAll('.mem-cell');
+  cells[i].textContent = memCards[i]; cells[i].classList.add('flipped');
+  memFlipped.push(i);
+  if (memFlipped.length === 2) {
+    memLock = true; memMoves++; memUpdateStats();
+    const [a, b] = memFlipped;
+    if (memCards[a] === memCards[b]) {
+      memMatched.push(a, b); cells[a].classList.add('matched'); cells[b].classList.add('matched');
+      memFlipped = []; memLock = false;
+      if (memMatched.length === memCards.length) {
+        document.getElementById('mem-msg').textContent = 'Nice! Done in ' + memMoves + ' moves.';
+        document.getElementById('mem-restart').classList.remove('hidden');
+      }
+    } else {
+      setTimeout(() => {
+        cells[a].textContent = ''; cells[b].textContent = '';
+        cells[a].classList.remove('flipped'); cells[b].classList.remove('flipped');
+        memFlipped = []; memLock = false;
+      }, 800);
+    }
+  }
+}
+
+memInit();
+</script>
+
+<!-- ===================== EMOJI PONG SCRIPT ===================== -->
+<script>
+function initPong() {
+// ─── Emoji Data ───
+const emojiSets = {
+  "⚽": ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🎱","🏓","🏸","🥏","🪃","🥊","🥅","⛳","🏒","🥍","🏏","🪀","🛹"],
+  "😀": ["😀","😂","🤣","😎","🥳","😈","👻","💀","🤡","😱","🥶","🤯","😍","🤩","😜","🤪","😡","🥺","😴","🤮","🫠"],
+  "🐶": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦆","🦅","🦋","🐛","🐝","🐞","🐙","🦑","🦀","🐡","🦈","🐊","🦕"],
+  "🍎": ["🍎","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🌽","🥕","🌶️","🍔","🍕","🌮","🍣","🍩","🍪","🎂","🧁","🍫","🍿","☕","🍺"],
+  "🚀": ["🚀","🛸","✈️","🚁","🚂","🚗","🏎️","🚌","🚑","🚒","🛶","⛵","🚲","🛵","🏍️","🛺","🚜"],
+  "💎": ["💎","🔥","⭐","🌈","❄️","💧","🌊","⚡","💥","✨","🎉","🎊","🎈","🎀","💰","👑","🏆","🔔","💣","🧲","🪩","🫧"],
+  "🌍": ["🌍","🌙","☀️","⛅","🌸","🌺","🌻","🌴","🍄","🌵","🎄","🍀","🪨","🌋","🏔️"],
+  "👾": ["👾","🤖","👽","🎮","🕹️","🧩","♟️","🎯","🎪","🎭","🎨","🧸","🪅","🪆","🃏","🀄","🎴"],
+};
+
+const speedLabels = ["Very Slow","Slow","Normal","Fast","Very Fast"];
+const speedMultipliers = [0.5, 0.75, 1.0, 1.35, 1.8];
+const diffLabels = ["Very Easy","Easy","Normal","Hard","Very Hard"];
+const diffMultipliers = [0.45, 0.58, 0.72, 0.88, 1.0];
+const paddleSizeMultipliers = [0.5, 0.75, 1.0, 1.35, 1.7];
+const sensLabels = ["Very Slow","Slow","Normal","Fast","Very Fast"];
+const sensMultipliers = [0.008, 0.014, 0.022, 0.032, 0.045];
+
+let speedSetting = 2, diffSetting = 2, paddleSizeSetting = 2, sensSetting = 2;
+let playerColor = { r: 100, g: 180, b: 255 };
+let aiColor = { r: 255, g: 100, b: 120 };
+let bgColor = { r: 10, g: 10, b: 26 };
+
+function rgbaStr(c, a) { return `rgba(${c.r},${c.g},${c.b},${a})`; }
+
+function rgbToHsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0, s = max === 0 ? 0 : d / max, v = max;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d + 6) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h /= 6;
+  }
+  return { h, s, v };
+}
+
+function hsvToRgb(h, s, v) {
+  let r, g, b;
+  const i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+    case 0: r = v; g = t; b = p; break; case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break; case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break; case 5: r = v; g = p; b = q; break;
+  }
+  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+}
+
+function createColorWheel(containerId, colorObj, onChange) {
+  const container = document.getElementById(containerId);
+  const wheelSize = 120, barWidth = 20, barHeight = 120, radius = wheelSize / 2;
+  let hsv = rgbToHsv(colorObj.r, colorObj.g, colorObj.b);
+
+  const wheelWrap = document.createElement("div");
+  wheelWrap.className = "pong-color-wheel-wrap";
+  wheelWrap.style.width = wheelSize + "px"; wheelWrap.style.height = wheelSize + "px";
+  const wheelCanvas = document.createElement("canvas");
+  wheelCanvas.className = "pong-color-wheel-canvas";
+  wheelCanvas.width = wheelSize * 2; wheelCanvas.height = wheelSize * 2;
+  wheelCanvas.style.width = wheelSize + "px"; wheelCanvas.style.height = wheelSize + "px";
+  const wheelCursor = document.createElement("div");
+  wheelCursor.className = "pong-color-wheel-cursor";
+  wheelWrap.appendChild(wheelCanvas); wheelWrap.appendChild(wheelCursor);
+
+  const brightWrap = document.createElement("div");
+  brightWrap.className = "pong-brightness-wrap-inner"; brightWrap.style.position = "relative";
+  const brightCanvas = document.createElement("canvas");
+  brightCanvas.className = "pong-brightness-canvas";
+  brightCanvas.width = barWidth * 2; brightCanvas.height = barHeight * 2;
+  brightCanvas.style.width = barWidth + "px"; brightCanvas.style.height = barHeight + "px";
+  const brightCursor = document.createElement("div");
+  brightCursor.className = "pong-brightness-cursor";
+  brightWrap.appendChild(brightCanvas); brightWrap.appendChild(brightCursor);
+
+  const swatch = document.createElement("div");
+  swatch.className = "pong-color-swatch";
+  container.appendChild(wheelWrap); container.appendChild(brightWrap); container.appendChild(swatch);
+
+  function drawWheel() {
+    const ctx = wheelCanvas.getContext("2d");
+    const s = wheelSize * 2, cx = s / 2, cy = s / 2, r = s / 2;
+    ctx.clearRect(0, 0, s, s);
+    const imgData = ctx.createImageData(s, s);
+    for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
+      const dx = x - cx, dy = y - cy, dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= r) {
+        const angle = (Math.atan2(dy, dx) / (2 * Math.PI) + 1) % 1;
+        const sat = dist / r;
+        const rgb = hsvToRgb(angle, sat, hsv.v);
+        const idx = (y * s + x) * 4;
+        imgData.data[idx] = rgb.r; imgData.data[idx+1] = rgb.g; imgData.data[idx+2] = rgb.b; imgData.data[idx+3] = 255;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  function drawBrightness() {
+    const ctx = brightCanvas.getContext("2d");
+    const w = barWidth * 2, h = barHeight * 2;
+    ctx.clearRect(0, 0, w, h);
+    for (let y = 0; y < h; y++) {
+      const v = 1 - y / h;
+      const rgb = hsvToRgb(hsv.h, hsv.s, v);
+      ctx.fillStyle = `rgb(${rgb.r},${rgb.g},${rgb.b})`; ctx.fillRect(0, y, w, 1);
+    }
+  }
+
+  function updateCursors() {
+    const angle = hsv.h * 2 * Math.PI, dist = hsv.s * radius;
+    wheelCursor.style.left = (radius + Math.cos(angle) * dist) + "px";
+    wheelCursor.style.top = (radius + Math.sin(angle) * dist) + "px";
+    brightCursor.style.left = (barWidth / 2) + "px";
+    brightCursor.style.top = ((1 - hsv.v) * barHeight) + "px";
+    const rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+    swatch.style.background = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+  }
+
+  function applyColor() {
+    const rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+    colorObj.r = rgb.r; colorObj.g = rgb.g; colorObj.b = rgb.b;
+    if (onChange) onChange();
+  }
+
+  function pickWheel(e) {
+    const rect = wheelCanvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    const x = t.clientX - rect.left, y = t.clientY - rect.top;
+    const dx = x - radius, dy = y - radius;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > radius) dist = radius;
+    hsv.h = (Math.atan2(dy, dx) / (2 * Math.PI) + 1) % 1;
+    hsv.s = dist / radius;
+    drawBrightness(); updateCursors(); applyColor();
+  }
+
+  let wheelDragging = false;
+  wheelCanvas.addEventListener("mousedown", e => { wheelDragging = true; pickWheel(e); });
+  wheelCanvas.addEventListener("touchstart", e => { e.preventDefault(); wheelDragging = true; pickWheel(e); }, { passive: false });
+  document.addEventListener("mousemove", e => { if (wheelDragging) pickWheel(e); });
+  document.addEventListener("touchmove", e => { if (wheelDragging) pickWheel(e); }, { passive: false });
+  document.addEventListener("mouseup", () => { wheelDragging = false; });
+  document.addEventListener("touchend", () => { wheelDragging = false; });
+
+  function pickBright(e) {
+    const rect = brightCanvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    const y = Math.max(0, Math.min(barHeight, t.clientY - rect.top));
+    hsv.v = 1 - y / barHeight;
+    drawWheel(); updateCursors(); applyColor();
+  }
+
+  let brightDragging = false;
+  brightCanvas.addEventListener("mousedown", e => { brightDragging = true; pickBright(e); });
+  brightCanvas.addEventListener("touchstart", e => { e.preventDefault(); brightDragging = true; pickBright(e); }, { passive: false });
+  document.addEventListener("mousemove", e => { if (brightDragging) pickBright(e); });
+  document.addEventListener("touchmove", e => { if (brightDragging) pickBright(e); }, { passive: false });
+  document.addEventListener("mouseup", () => { brightDragging = false; });
+  document.addEventListener("touchend", () => { brightDragging = false; });
+
+  drawWheel(); drawBrightness(); updateCursors();
+}
+
+// ─── State ───
+const gameCanvas = document.getElementById("pong-game");
+const ctx = gameCanvas.getContext("2d");
+let W, H, dpr;
+let ballEmoji = "🏓";
+let gameState = "start";
+let paused = false;
+const winScore = 7;
+
+const paddle = { baseW: 0, w: 0, h: 0, radius: 8 };
+const player = { x: 0, y: 0 };
+const ai = { x: 0, y: 0, speed: 0 };
+const ball = { x: 0, y: 0, vx: 0, vy: 0, size: 0, speed: 0, baseSpeed: 0 };
+const score = { player: 0, ai: 0 };
+let touchX = null;
+let ballTrail = [];
+let pongAnimId = null;
+
+function applySettings() {
+  ball.speed = ball.baseSpeed * speedMultipliers[speedSetting];
+  ai.speed = ball.speed * diffMultipliers[diffSetting];
+  paddle.w = paddle.baseW * paddleSizeMultipliers[paddleSizeSetting];
+}
+
+function applyBgColor() {
+  document.getElementById("pong-body").style.setProperty("--bg-color", `rgb(${bgColor.r},${bgColor.g},${bgColor.b})`);
+}
+
+function resize() {
+  if (currentPage !== 'emoji-pong') return;
+  dpr = window.devicePixelRatio || 1;
+  const maxW = Math.min(window.innerWidth, 480);
+  const maxH = Math.min(window.innerHeight - 57, 860);
+  W = maxW; H = maxH;
+  gameCanvas.width = W * dpr; gameCanvas.height = H * dpr;
+  gameCanvas.style.width = W + "px"; gameCanvas.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  paddle.baseW = W * 0.22; paddle.h = 14;
+  player.y = H - 50; ai.y = 36;
+  player.x = W / 2; ai.x = W / 2;
+  ball.size = 28; ball.baseSpeed = H * 0.006;
+  applySettings();
+}
+
+function resetBall(dir) {
+  ball.x = W / 2; ball.y = H / 2;
+  const angle = (Math.random() * 0.8 + 0.2) * (Math.random() < 0.5 ? 1 : -1);
+  ball.vx = Math.sin(angle) * ball.speed;
+  ball.vy = Math.cos(angle) * ball.speed * (dir || 1);
+  ballTrail = [];
+}
+
+function startGame() {
+  score.player = 0; score.ai = 0; updateScoreUI();
+  player.x = W / 2; ai.x = W / 2;
+  applySettings(); resetBall(1);
+  gameState = "playing"; paused = false; updatePause();
+  document.getElementById("pong-start-screen").classList.add("pong-hidden");
+  document.getElementById("pong-gameover-screen").classList.add("pong-hidden");
+  if (!muted) startMusic();
+}
+
+function endGame() {
+  gameState = "over";
+  const won = score.player >= winScore;
+  document.getElementById("pong-go-title").textContent = won ? "You Win!" : "You Lose";
+  document.getElementById("pong-go-subtitle").textContent = `${score.player} – ${score.ai}`;
+  document.getElementById("pong-go-ball-preview").textContent = ballEmoji;
+  document.getElementById("pong-gameover-screen").classList.remove("pong-hidden");
+  stopMusic();
+}
+
+function updateScoreUI() {
+  document.getElementById("pong-ai-score").textContent = score.ai;
+  document.getElementById("pong-player-score").textContent = score.player;
+}
+
+let manualPause = false;
+function updatePause() {
+  paused = manualPause || pickerOpen || settingsOpen;
+  document.getElementById("pong-pause-overlay").classList.toggle("visible", paused && gameState === "playing");
+}
+
+function resumeGame() {
+  manualPause = false; togglePicker(false); toggleSettings(false);
+  if (gameState === "playing") resetBall(1);
+  if (!muted) startMusic();
+}
+
+function checkPanelsPause() {
+  const wasPaused = paused;
+  paused = pickerOpen || settingsOpen;
+  if (paused !== wasPaused) updatePause();
+}
+
+// ─── Game Loop ───
+function update() {
+  if (gameState !== "playing" || paused) return;
+  ball.x += ball.vx; ball.y += ball.vy;
+  ballTrail.push({ x: ball.x, y: ball.y });
+  if (ballTrail.length > 6) ballTrail.shift();
+  if (ball.x - ball.size / 2 <= 0) { ball.x = ball.size / 2; ball.vx *= -1; }
+  if (ball.x + ball.size / 2 >= W) { ball.x = W - ball.size / 2; ball.vx *= -1; }
+  if (ball.vy > 0 && ball.y + ball.size / 2 >= player.y - paddle.h / 2 && ball.y - ball.size / 2 <= player.y + paddle.h / 2) {
+    if (ball.x >= player.x - paddle.w / 2 - 4 && ball.x <= player.x + paddle.w / 2 + 4) {
+      ball.y = player.y - paddle.h / 2 - ball.size / 2;
+      const offset = (ball.x - player.x) / (paddle.w / 2);
+      ball.vx = offset * ball.speed * 1.1;
+      ball.vy = -Math.abs(ball.vy) * 1.03;
+      clampSpeed();
+    }
+  }
+  if (ball.vy < 0 && ball.y - ball.size / 2 <= ai.y + paddle.h / 2 && ball.y + ball.size / 2 >= ai.y - paddle.h / 2) {
+    if (ball.x >= ai.x - paddle.w / 2 - 4 && ball.x <= ai.x + paddle.w / 2 + 4) {
+      ball.y = ai.y + paddle.h / 2 + ball.size / 2;
+      const offset = (ball.x - ai.x) / (paddle.w / 2);
+      ball.vx = offset * ball.speed * 1.1;
+      ball.vy = Math.abs(ball.vy) * 1.03;
+      clampSpeed();
+    }
+  }
+  if (ball.y < -ball.size) { score.player++; updateScoreUI(); if (score.player >= winScore) return endGame(); resetBall(1); }
+  if (ball.y > H + ball.size) { score.ai++; updateScoreUI(); if (score.ai >= winScore) return endGame(); resetBall(-1); }
+  const aiTarget = ball.vy < 0 ? ball.x : W / 2;
+  const diff = aiTarget - ai.x;
+  ai.x += Math.sign(diff) * Math.min(Math.abs(diff), ai.speed);
+  ai.x = Math.max(paddle.w / 2, Math.min(W - paddle.w / 2, ai.x));
+  if (inputMode === "keyboard" || (!pongIsMobile && (pongKeysDown["ArrowLeft"] || pongKeysDown["ArrowRight"]))) {
+    const keySpeed = W * sensMultipliers[sensSetting];
+    if (pongKeysDown["ArrowLeft"]) player.x -= keySpeed;
+    if (pongKeysDown["ArrowRight"]) player.x += keySpeed;
+  } else if (touchX !== null) {
+    player.x += (touchX - player.x) * 0.25;
+  }
+  player.x = Math.max(paddle.w / 2, Math.min(W - paddle.w / 2, player.x));
+}
+
+function clampSpeed() {
+  const maxSpd = ball.speed * 2.2;
+  const spd = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+  if (spd > maxSpd) { ball.vx *= maxSpd / spd; ball.vy *= maxSpd / spd; }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = `rgb(${bgColor.r},${bgColor.g},${bgColor.b})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.setLineDash([6, 8]); ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke(); ctx.setLineDash([]);
+  drawPaddle(player.x, player.y, rgbaStr(playerColor, 0.9), rgbaStr(playerColor, 0.2));
+  drawPaddle(ai.x, ai.y, rgbaStr(aiColor, 0.9), rgbaStr(aiColor, 0.2));
+  if (gameState === "playing") {
+    for (let i = 0; i < ballTrail.length; i++) {
+      const t = ballTrail[i];
+      ctx.globalAlpha = (i + 1) / (ballTrail.length + 1) * 0.35;
+      ctx.font = `${ball.size * 0.8}px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(ballEmoji, t.x, t.y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.font = `${ball.size}px serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(ballEmoji, ball.x, ball.y);
+  }
+}
+
+function drawPaddle(x, y, color, glow) {
+  const r = paddle.radius;
+  ctx.shadowColor = color; ctx.shadowBlur = 16;
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.roundRect(x - paddle.w / 2 - 4, y - paddle.h / 2 - 4, paddle.w + 8, paddle.h + 8, r + 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(x - paddle.w / 2, y - paddle.h / 2, paddle.w, paddle.h, r); ctx.fill();
+}
+
+function loop() { update(); draw(); pongAnimId = requestAnimationFrame(loop); }
+
+// ─── Device Detection ───
+const pongIsMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  || (navigator.maxTouchPoints > 1 && window.innerWidth < 768);
+document.getElementById("pong-instructions-text").textContent = pongIsMobile
+  ? "Drag to move your paddle. Tap 🎨 to customize. Tap ⚙️ for speed and difficulty."
+  : "Move your mouse or use arrow keys to control your paddle. Click 🎨 to customize. Click ⚙️ for speed and difficulty.";
+
+// ─── Input ───
+function getTouchX(e) {
+  const rect = gameCanvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return t.clientX - rect.left;
+}
+gameCanvas.addEventListener("touchstart", e => { e.preventDefault(); touchX = getTouchX(e); }, { passive: false });
+gameCanvas.addEventListener("touchmove", e => { e.preventDefault(); touchX = getTouchX(e); }, { passive: false });
+gameCanvas.addEventListener("touchend", () => { touchX = null; });
+
+let inputMode = "mouse";
+if (!pongIsMobile) {
+  gameCanvas.addEventListener("mousemove", e => { inputMode = "mouse"; touchX = getTouchX(e); });
+}
+
+const pongKeysDown = {};
+document.addEventListener("keydown", e => {
+  if (currentPage !== 'emoji-pong') return;
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    e.preventDefault(); pongKeysDown[e.key] = true; inputMode = "keyboard";
+  }
+  if (e.key === "Escape" && gameState === "playing") {
+    e.preventDefault();
+    if (paused) resumeGame(); else { manualPause = true; updatePause(); }
+  }
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") pongKeysDown[e.key] = false;
+});
+
+// ─── Panels ───
+const customizePanel = document.getElementById("pong-customize-panel");
+const emojiGrid = document.getElementById("pong-emoji-grid");
+const emojiCats = document.getElementById("pong-emoji-categories");
+let currentCat = Object.keys(emojiSets)[0];
+let pickerOpen = false, settingsOpen = false;
+
+function buildCategories() {
+  emojiCats.innerHTML = "";
+  for (const key of Object.keys(emojiSets)) {
+    const btn = document.createElement("button");
+    btn.className = "pong-cat-btn" + (key === currentCat ? " active" : "");
+    btn.textContent = key;
+    btn.onclick = () => { currentCat = key; buildCategories(); buildGrid(); };
+    emojiCats.appendChild(btn);
+  }
+}
+
+function buildGrid() {
+  emojiGrid.innerHTML = "";
+  for (const em of emojiSets[currentCat]) {
+    const btn = document.createElement("button");
+    btn.className = "pong-emoji-btn"; btn.textContent = em;
+    btn.onclick = () => selectEmoji(em);
+    emojiGrid.appendChild(btn);
+  }
+}
+
+function selectEmoji(em) {
+  ballEmoji = em;
+  document.getElementById("pong-start-ball-preview").textContent = em;
+  document.getElementById("pong-go-ball-preview").textContent = em;
+}
+
+function togglePicker(force) {
+  pickerOpen = force !== undefined ? force : !pickerOpen;
+  customizePanel.classList.toggle("open", pickerOpen);
+  if (pickerOpen) toggleSettings(false);
+  checkPanelsPause();
+}
+
+function toggleSettings(force) {
+  settingsOpen = force !== undefined ? force : !settingsOpen;
+  document.getElementById("pong-settings-panel").classList.toggle("open", settingsOpen);
+  if (settingsOpen) togglePicker(false);
+  checkPanelsPause();
+}
+
+document.getElementById("pong-customize-btn").onclick = () => togglePicker();
+document.getElementById("pong-settings-btn").onclick = () => toggleSettings();
+buildCategories(); buildGrid();
+
+document.getElementById("pong-paddle-size-slider").addEventListener("input", e => {
+  paddleSizeSetting = parseInt(e.target.value) - 1; applySettings();
+});
+
+createColorWheel("pong-player-color-container", playerColor);
+createColorWheel("pong-ai-color-container", aiColor);
+createColorWheel("pong-bg-color-container", bgColor, applyBgColor);
+applyBgColor();
+
+// ─── Settings Sliders ───
+const speedSliders = [document.getElementById("pong-speed-slider"), document.getElementById("pong-start-speed-slider")];
+const diffSliders = [document.getElementById("pong-diff-slider"), document.getElementById("pong-start-diff-slider")];
+const speedValueEls = [document.getElementById("pong-speed-value"), document.getElementById("pong-start-speed-value")];
+const diffValueEls = [document.getElementById("pong-diff-value"), document.getElementById("pong-start-diff-value")];
+const sensSliders = [document.getElementById("pong-sens-slider"), document.getElementById("pong-start-sens-slider")];
+const sensValueEls = [document.getElementById("pong-sens-value"), document.getElementById("pong-start-sens-value")];
+
+function syncSpeedUI() { speedSliders.forEach(s => s.value = speedSetting + 1); speedValueEls.forEach(el => el.textContent = speedLabels[speedSetting]); }
+function syncDiffUI() { diffSliders.forEach(s => s.value = diffSetting + 1); diffValueEls.forEach(el => el.textContent = diffLabels[diffSetting]); }
+function syncSensUI() { sensSliders.forEach(s => s.value = sensSetting + 1); sensValueEls.forEach(el => el.textContent = sensLabels[sensSetting]); }
+
+function onSpeedChange(e) {
+  const oldSpeed = ball.speed;
+  speedSetting = parseInt(e.target.value) - 1; applySettings(); syncSpeedUI();
+  if (oldSpeed > 0 && gameState === "playing") { const scale = ball.speed / oldSpeed; ball.vx *= scale; ball.vy *= scale; }
+}
+function onDiffChange(e) { diffSetting = parseInt(e.target.value) - 1; applySettings(); syncDiffUI(); }
+function onSensChange(e) { sensSetting = parseInt(e.target.value) - 1; syncSensUI(); }
+
+speedSliders.forEach(s => s.addEventListener("input", onSpeedChange));
+diffSliders.forEach(s => s.addEventListener("input", onDiffChange));
+sensSliders.forEach(s => s.addEventListener("input", onSensChange));
+syncSpeedUI(); syncDiffUI(); syncSensUI();
+
+if (pongIsMobile) document.querySelectorAll(".pong-keyboard-only").forEach(el => el.style.display = "none");
+
+document.getElementById("pong-resume-btn").onclick = resumeGame;
+document.getElementById("pong-palette-resume-btn").onclick = resumeGame;
+
+// ─── Music Engine ───
+let audioCtx = null, musicPlaying = false, muted = false, masterGain = null, musicTimeout = null, currentSong = 0;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain(); masterGain.gain.value = 0.25;
+  const comp = audioCtx.createDynamicsCompressor();
+  comp.threshold.value = -18; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.15;
+  masterGain.connect(comp); comp.connect(audioCtx.destination);
+}
+
+function n(note, oct) {
+  const s = { C:0, Cs:1, D:2, Ds:3, E:4, F:5, Fs:6, G:7, Gs:8, A:9, As:10, B:11 };
+  return 440 * Math.pow(2, (s[note] - 9) / 12 + (oct - 4));
+}
+
+function playChip(freq, start, dur, type, vol) {
+  for (const dt of [-6, 6]) {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq; o.detune.value = dt;
+    g.gain.setValueAtTime(vol * 0.55, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur - 0.01);
+    o.connect(g); g.connect(masterGain); o.start(start); o.stop(start + dur);
+  }
+}
+
+function playTone(freq, start, dur, type, vol) {
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start + dur - 0.01);
+  o.connect(g); g.connect(masterGain); o.start(start); o.stop(start + dur);
+}
+
+function playKick(t) {
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = "sine"; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.12);
+  g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  o.connect(g); g.connect(masterGain); o.start(t); o.stop(t + 0.16);
+}
+
+function playSnare(t) {
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
+  const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const ng = audioCtx.createGain(); ng.gain.setValueAtTime(0.15, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+  const hp = audioCtx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 3000;
+  src.connect(hp); hp.connect(ng); ng.connect(masterGain); src.start(t); src.stop(t + 0.08);
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = "triangle"; o.frequency.value = 180;
+  g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+  o.connect(g); g.connect(masterGain); o.start(t); o.stop(t + 0.07);
+}
+
+function playHat(t, open) {
+  const len = open ? 0.08 : 0.03, vol = open ? 0.06 : 0.04;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const ng = audioCtx.createGain(); ng.gain.setValueAtTime(vol, t); ng.gain.exponentialRampToValueAtTime(0.001, t + len - 0.005);
+  const bp = audioCtx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 10000; bp.Q.value = 1;
+  src.connect(bp); bp.connect(ng); ng.connect(masterGain); src.start(t); src.stop(t + len);
+}
+
+function scheduleMelody(notes, start, type, vol, thick) {
+  let t = start;
+  for (const [freq, dur] of notes) {
+    if (freq > 0) { if (thick) playChip(freq, t, dur * 0.9, type, vol); else playTone(freq, t, dur * 0.85, type, vol); }
+    t += dur;
+  }
+  return t - start;
+}
+
+function scheduleArp(freqs, start, stepDur, type, vol) {
+  let t = start;
+  for (const f of freqs) { playTone(f, t, stepDur * 0.85, type, vol); t += stepDur; }
+}
+
+function scheduleDrums(start, bars, beat, half) {
+  for (let bar = 0; bar < bars; bar++) {
+    for (let b = 0; b < 4; b++) {
+      const bt = start + bar * 4 * beat + b * beat;
+      if (b === 0 || b === 2) playKick(bt);
+      if (b === 1 || b === 3) playSnare(bt);
+      playHat(bt, false); playHat(bt + half, b === 1 || b === 3);
+    }
+  }
+}
+
+const SONGS = [
+  { name: "Neon Runner", schedule: scheduleNeonRunner },
+  { name: "Pixel Drift", schedule: schedulePixelDrift },
+  { name: "Cosmic Bounce", schedule: scheduleCosmicBounce },
+  { name: "Circuit Breaker", schedule: scheduleCircuitBreaker },
+  { name: "Bit Crusher", schedule: scheduleBitCrusher },
+];
+
+function scheduleNeonRunner(now) {
+  const bpm=128,beat=60/bpm,s=beat/2,bars=8,dur=bars*4*beat;
+  const mel=[[n("E",4),s*3],[n("G",4),s],[n("A",4),s*2],[n("G",4),s*2],[n("E",4),s*2],[n("D",4),s*2],[n("E",4),s*4],[n("A",4),s*2],[n("G",4),s],[n("A",4),s],[n("B",4),s*2],[n("A",4),s*2],[n("G",4),s*2],[n("E",4),s*2],[n("D",4),s*4],[n("E",5),s*2],[n("D",5),s],[n("B",4),s],[n("A",4),s*2],[n("G",4),s*2],[n("A",4),s*3],[n("B",4),s],[n("A",4),s*2],[n("G",4),s*2],[n("E",4),s*2],[n("G",4),s*2],[n("A",4),s*4],[n("B",4),s*2],[n("A",4),s*2],[n("G",4),s*2],[0,s*2]];
+  scheduleMelody(mel,now,"square",0.1,true);
+  const arp=[n("A",3),n("C",4),n("E",4),n("A",3),n("C",4),n("E",4),n("A",3),n("C",4),n("C",4),n("E",4),n("G",4),n("C",4),n("E",4),n("G",4),n("C",4),n("E",4),n("A",3),n("C",4),n("E",4),n("A",3),n("C",4),n("E",4),n("A",3),n("C",4),n("G",3),n("B",3),n("D",4),n("G",3),n("B",3),n("D",4),n("G",3),n("B",3),n("C",4),n("E",4),n("G",4),n("C",4),n("E",4),n("G",4),n("C",4),n("E",4),n("A",3),n("C",4),n("E",4),n("A",3),n("C",4),n("E",4),n("A",3),n("C",4),n("E",3),n("G",3),n("B",3),n("E",3),n("G",3),n("B",3),n("E",3),n("G",3),n("A",3),n("C",4),n("E",4),n("A",4),n("E",4),n("C",4),n("A",3),n("E",3)];
+  scheduleArp(arp,now,s,"square",0.04);
+  const bass=[[n("A",2),beat*2],[n("A",2),beat],[n("E",2),beat],[n("C",3),beat*2],[n("C",3),beat],[n("G",2),beat],[n("A",2),beat*2],[n("A",2),beat],[n("E",2),beat],[n("G",2),beat*2],[n("G",2),beat],[n("D",2),beat],[n("C",3),beat*2],[n("C",3),beat],[n("G",2),beat],[n("A",2),beat*2],[n("A",2),beat],[n("E",2),beat],[n("E",2),beat*2],[n("E",2),beat],[n("B",1),beat],[n("A",2),beat*2],[n("G",2),beat],[n("E",2),beat]];
+  scheduleMelody(bass,now,"triangle",0.13,false);
+  scheduleDrums(now,bars,beat,s);
+  return dur;
+}
+
+function schedulePixelDrift(now) {
+  const bpm=110,beat=60/bpm,s=beat/2,bars=8,dur=bars*4*beat;
+  const mel=[[n("C",4),beat],[n("E",4),beat],[n("G",4),beat*2],[n("A",4),beat],[n("G",4),beat],[n("E",4),beat*2],[n("F",4),beat],[n("A",4),beat],[n("G",4),beat],[n("E",4),beat],[n("D",4),beat*2],[n("C",4),beat*2],[n("G",4),beat],[n("A",4),s],[n("B",4),s],[n("C",5),beat*2],[n("B",4),beat],[n("A",4),beat],[n("G",4),beat*2],[n("E",4),beat],[n("F",4),beat],[n("E",4),beat],[n("D",4),beat],[n("C",4),beat*3],[0,beat]];
+  scheduleMelody(mel,now,"square",0.09,true);
+  const chords=[[n("C",3),n("E",3),n("G",3)],[n("F",3),n("A",3),n("C",4)],[n("G",3),n("B",3),n("D",4)],[n("A",3),n("C",4),n("E",4)]];
+  let ta=now;
+  for(let bar=0;bar<bars;bar++){const ch=chords[bar%chords.length];for(let i=0;i<8;i++){playTone(ch[i%3],ta,s*0.8,"triangle",0.05);ta+=s;}}
+  const bassRoots=[n("C",2),n("C",2),n("F",2),n("F",2),n("G",2),n("G",2),n("A",2),n("A",2)];
+  let tb=now;for(const f of bassRoots){playTone(f,tb,beat*3.5,"triangle",0.12);tb+=beat*4;}
+  for(let bar=0;bar<bars;bar++){for(let b=0;b<4;b++){const bt=now+bar*4*beat+b*beat;if(b===0)playKick(bt);if(b===2)playSnare(bt);playHat(bt,false);}}
+  return dur;
+}
+
+function scheduleCosmicBounce(now) {
+  const bpm=140,beat=60/bpm,s=beat/2,bars=8,dur=bars*4*beat;
+  const mel=[[n("E",4),s],[n("G",4),s],[n("A",4),s],[n("B",4),s],[n("E",5),beat],[n("D",5),beat],[n("B",4),s],[n("A",4),s],[n("G",4),beat],[n("E",4),beat],[0,beat],[n("B",4),s],[n("D",5),s],[n("E",5),beat],[n("D",5),s],[n("B",4),s],[n("A",4),beat],[n("G",4),s],[n("A",4),s],[n("B",4),beat*2],[n("E",5),s],[n("Fs",5),s],[n("G",5),beat],[n("E",5),beat],[n("D",5),s],[n("B",4),s],[n("A",4),beat],[n("G",4),beat],[n("A",4),s],[n("B",4),s],[n("D",5),beat],[n("B",4),beat],[n("A",4),beat],[n("G",4),beat],[n("E",4),beat],[0,beat]];
+  scheduleMelody(mel,now,"square",0.1,true);
+  const arpChords=[[n("E",3),n("G",3),n("B",3)],[n("G",3),n("B",3),n("D",4)],[n("A",3),n("C",4),n("E",4)],[n("B",3),n("Ds",4),n("Fs",4)]];
+  let ta=now;for(let bar=0;bar<bars;bar++){const ch=arpChords[bar%arpChords.length];for(let i=0;i<8;i++){playTone(ch[i%3],ta,s*0.7,"square",0.035);ta+=s;}}
+  const bass=[[n("E",2),beat*2],[n("E",2),beat],[n("G",2),beat],[n("G",2),beat*2],[n("A",2),beat],[n("B",2),beat],[n("A",2),beat*2],[n("A",2),beat],[n("E",2),beat],[n("B",2),beat*2],[n("A",2),beat],[n("G",2),beat],[n("E",2),beat*2],[n("G",2),beat],[n("A",2),beat],[n("G",2),beat*2],[n("Fs",2),beat],[n("E",2),beat],[n("A",2),beat*2],[n("B",2),beat],[n("A",2),beat],[n("G",2),beat*2],[n("E",2),beat*2]];
+  scheduleMelody(bass,now,"triangle",0.14,false);
+  scheduleDrums(now,bars,beat,s);
+  return dur;
+}
+
+function scheduleCircuitBreaker(now) {
+  const bpm=135,beat=60/bpm,s=beat/2,bars=8,dur=bars*4*beat;
+  const mel=[[n("D",4),s],[n("F",4),s],[n("A",4),beat],[n("G",4),s],[n("F",4),s],[n("E",4),beat],[n("D",4),beat],[0,beat],[n("A",4),s],[n("G",4),s],[n("F",4),s],[n("E",4),s],[n("D",4),beat*2],[0,s],[n("D",4),s],[n("E",4),s],[n("F",4),s],[n("A",4),beat],[n("C",5),beat],[n("A",4),beat],[n("G",4),beat],[n("F",4),s],[n("G",4),s],[n("A",4),beat],[n("F",4),beat*2],[n("D",5),beat],[n("C",5),s],[n("A",4),s],[n("G",4),beat],[n("F",4),beat],[n("E",4),beat],[n("D",4),beat*2],[0,beat]];
+  scheduleMelody(mel,now,"square",0.09,true);
+  const pads=[[n("D",3),n("F",3),n("A",3)],[n("As",2),n("D",3),n("F",3)],[n("C",3),n("E",3),n("G",3)],[n("A",2),n("C",3),n("E",3)]];
+  let tp=now;for(let bar=0;bar<bars;bar++){const ch=pads[Math.floor(bar/2)%pads.length];for(const f of ch)playTone(f,tp,beat*3.8,"sawtooth",0.025);tp+=beat*4;}
+  const bass=[[n("D",2),beat],[n("D",3),s],[n("D",2),s],[n("D",2),beat],[n("F",2),beat],[n("As",1),beat],[n("As",2),s],[n("As",1),s],[n("As",1),beat],[n("C",2),beat],[n("C",2),beat],[n("C",3),s],[n("C",2),s],[n("C",2),beat],[n("E",2),beat],[n("A",1),beat],[n("A",2),s],[n("A",1),s],[n("A",1),beat*2],[n("D",2),beat],[n("D",3),s],[n("D",2),s],[n("D",2),beat],[n("F",2),beat],[n("As",1),beat],[n("As",2),s],[n("As",1),s],[n("As",1),beat],[n("C",2),beat],[n("C",2),beat],[n("C",3),s],[n("G",2),s],[n("E",2),beat],[n("C",2),beat],[n("D",2),beat*2],[n("A",1),beat*2]];
+  scheduleMelody(bass,now,"triangle",0.13,false);
+  for(let bar=0;bar<bars;bar++){for(let b=0;b<4;b++){const bt=now+bar*4*beat+b*beat;playKick(bt);if(b===1||b===3)playSnare(bt);playHat(bt,false);playHat(bt+s,b%2===1);}}
+  return dur;
+}
+
+function scheduleBitCrusher(now) {
+  const bpm=120,beat=60/bpm,s=beat/2,bars=8,dur=bars*4*beat;
+  const mel=[[n("G",4),s],[n("A",4),s],[n("B",4),beat],[n("D",5),beat],[n("B",4),s],[n("A",4),s],[n("G",4),beat],[n("F",4),beat],[n("G",4),beat*2],[n("B",4),s],[n("D",5),s],[n("E",5),beat],[n("D",5),beat],[n("B",4),s],[n("A",4),s],[n("G",4),beat*2],[n("G",4),beat],[0,s],[n("G",4),s],[n("A",4),beat],[n("B",4),beat],[n("D",5),beat],[n("C",5),beat],[n("B",4),beat],[n("A",4),beat],[n("G",4),s],[n("F",4),s],[n("G",4),beat],[n("A",4),s],[n("B",4),s],[n("A",4),beat],[n("G",4),beat*2],[0,beat*2]];
+  scheduleMelody(mel,now,"square",0.1,true);
+  const arpC=[[n("G",3),n("B",3),n("D",4)],[n("C",3),n("E",3),n("G",3)],[n("F",3),n("A",3),n("C",4)],[n("D",3),n("F",3),n("A",3)]];
+  let ta=now;for(let bar=0;bar<bars;bar++){const ch=arpC[bar%arpC.length];for(let i=0;i<4;i++){playTone(ch[0],ta,s*0.7,"square",0.04);ta+=s;playTone(ch[2],ta,s*0.7,"square",0.04);ta+=s;}}
+  const bass=[[n("G",2),s],[0,s],[n("G",2),s],[n("A",2),s],[n("B",2),beat],[n("G",2),beat],[n("C",2),s],[0,s],[n("C",3),s],[n("C",2),s],[n("E",2),beat],[n("G",2),beat],[n("F",2),s],[0,s],[n("F",2),s],[n("G",2),s],[n("A",2),beat],[n("F",2),beat],[n("D",2),s],[0,s],[n("D",2),s],[n("F",2),s],[n("A",2),beat],[n("D",2),beat],[n("G",2),s],[0,s],[n("G",2),s],[n("B",2),s],[n("D",3),beat],[n("G",2),beat],[n("C",2),s],[0,s],[n("E",2),s],[n("G",2),s],[n("C",3),beat],[n("G",2),beat],[n("F",2),beat],[n("E",2),beat],[n("D",2),beat],[n("C",2),beat],[n("G",2),beat*2],[n("D",2),beat*2]];
+  scheduleMelody(bass,now,"triangle",0.13,false);
+  scheduleDrums(now,bars,beat,s);
+  return dur;
+}
+
+function scheduleLoop() {
+  if (!musicPlaying || muted) return;
+  const now = audioCtx.currentTime + 0.05;
+  const loopDuration = SONGS[currentSong].schedule(now);
+  musicTimeout = setTimeout(() => scheduleLoop(), (loopDuration - 0.2) * 1000);
+}
+
+function startMusic() {
+  initAudio();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (musicPlaying) return;
+  musicPlaying = true; scheduleLoop();
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicTimeout) { clearTimeout(musicTimeout); musicTimeout = null; }
+}
+
+function toggleMute() {
+  muted = !muted;
+  document.getElementById("pong-mute-btn").textContent = muted ? "🔇" : "🔊";
+  if (muted) { stopMusic(); if (masterGain) masterGain.gain.value = 0; }
+  else { if (masterGain) masterGain.gain.value = 0.25; if (gameState === "playing") startMusic(); }
+}
+
+document.getElementById("pong-mute-btn").onclick = toggleMute;
+
+function buildSongGrid() {
+  const grid = document.getElementById("pong-song-grid");
+  grid.innerHTML = "";
+  SONGS.forEach((song, i) => {
+    const btn = document.createElement("button");
+    btn.className = "pong-song-btn" + (i === currentSong ? " active" : "");
+    btn.textContent = song.name;
+    btn.onclick = () => { currentSong = i; buildSongGrid(); if (musicPlaying) { stopMusic(); if (!muted) startMusic(); } };
+    grid.appendChild(btn);
+  });
+}
+buildSongGrid();
+
+document.getElementById("pong-start-btn").onclick = startGame;
+document.getElementById("pong-restart-btn").onclick = startGame;
+
+window.addEventListener("resize", resize);
+resize();
+resetBall(1);
+loop();
+
+// Cleanup function for when leaving pong page
+window.pongCleanup = function() {
+  if (pongAnimId) { cancelAnimationFrame(pongAnimId); pongAnimId = null; }
+  stopMusic();
+  gameState = "start";
+  paused = true;
+};
+
+} // end initPong
+</script>
+
 </body>
 </html>

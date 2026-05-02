@@ -1,0 +1,78 @@
+name: Update MLB Box Scores
+
+on:
+  schedule:
+    # Runs at 11:00 AM UTC = 7:00 AM ET daily
+    - cron: '0 11 * * *'
+  workflow_dispatch: # allows manual trigger from GitHub Actions tab
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update -q
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.3.0'
+
+      - name: Cache R packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: r-pkg-cache-${{ hashFiles('**/DESCRIPTION') }}-v1
+
+      - name: Install R packages
+        run: |
+          Rscript -e 'install.packages(c("here","data.table","magrittr","httr","jsonlite","stringr","chromote","base64enc","lubridate"), repos="https://cloud.r-project.org")'
+
+      - name: Run Version 1 (baseball page)
+        working-directory: baseball-box-scores
+        run: |
+          Rscript -e '
+            source("get_boxscores_v1.r")
+            get_box_scores(
+              format(Sys.Date(), "%Y"),
+              format(Sys.Date(), "%m"),
+              format(Sys.Date(), "%d"),
+              output_dir = "../baseball",
+              save_pdf = FALSE
+            )
+          '
+
+      - name: Run Version 2 (shortball page)
+        working-directory: baseball-box-scores
+        run: |
+          Rscript -e '
+            source("get_boxscores_v2.r")
+            get_box_scores(
+              format(Sys.Date(), "%Y"),
+              format(Sys.Date(), "%m"),
+              format(Sys.Date(), "%d"),
+              output_dir = "../shortball",
+              save_pdf = FALSE
+            )
+          '
+
+      - name: Commit and push updated pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add baseball/index.html shortball/index.html baseball/*.html shortball/*.html || true
+          git diff --staged --quiet || git commit -m "Update box scores for $(date +'%Y-%m-%d')"
+          git push

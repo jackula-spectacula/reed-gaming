@@ -2,8 +2,8 @@ name: Update MLB Box Scores
 
 on:
   schedule:
-    # Runs at 11:00 AM UTC = 7:00 AM ET daily
-    - cron: '0 11 * * *'
+    # Runs at 7:00 AM UTC = 2:00 AM ET daily
+    - cron: '0 7 * * *'
   workflow_dispatch: # allows manual trigger from GitHub Actions tab
 
 jobs:
